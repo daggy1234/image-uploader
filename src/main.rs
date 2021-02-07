@@ -16,7 +16,6 @@ use web::Payload;
 mod auth;
 use rand::Rng;
 use tera::Tera;
-use actix_session::{CookieSession, Session};
 mod id;
 use regex;
 
@@ -183,7 +182,7 @@ async fn save_file(mut payload: Multipart) -> Result<HttpResponse, Error> {
 
 #[get("/")]
 async fn index() -> Result<HttpResponse, Error> {
-    let f = async_std::fs::read("static/images/dagpi.png").await?;
+    let f = async_std::fs::read("./static/images/home.png").await?;
     Ok(HttpResponse::Ok().content_type("image/png").body(f))
 }
 
