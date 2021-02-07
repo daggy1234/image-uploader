@@ -247,7 +247,7 @@ async fn main() -> std::io::Result<()> {
     env_logger::init();
     dotenv::dotenv().ok();
     HttpServer::new(|| {
-        let tera = Tera::new(concat!(env!("CARGO_MANIFEST_DIR"), "/templates/**/*")).unwrap();
+        let tera = Tera::new("templates/**/*").unwrap();
         let store = MemoryStore::new();
         let auth_conf = models::Auth {
             user: AUTH_USER.as_str().to_string(),

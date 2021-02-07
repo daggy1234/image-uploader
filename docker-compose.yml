@@ -4,6 +4,7 @@ services:
   cdn:
     container_name: dagcdn
     image: daggy1234/cdn:main
+    env_file: .env
     labels:
       - traefik.enable=true
     ports:
@@ -17,7 +18,7 @@ services:
     volumes:
       - ./static:/usr/local/bin/static
 
-  traefik:
+  lb:
     image: traefik:v2.0
     restart: always
     container_name: traefik
