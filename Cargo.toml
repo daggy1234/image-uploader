@@ -26,21 +26,3 @@ dotenv = "0.15.0"
 tera = "1"
 actix-identity = "0.3.1"
 actix_session="0.4"
-
-[package.metadata.wharf.builder]
-image = "rust"
-
-[package.metadata.wharf.output]
-image = "gcr.io/distroless/cc-debian10"
-entrypoint = ["cdn"]
-stop-signal = "SIGINT"
-volumes=["/static"]
-
-[package.metadata.wharf.output.labels]
-"simple-label" = "simple value"
-"my.awesome.label" = "another value"
-
-[[package.metadata.wharf.binary]]
-name = "dag_cdn"
-destination = "/usr/local/bin/cdn"
-
