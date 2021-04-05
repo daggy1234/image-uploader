@@ -1,19 +1,15 @@
-FROM lukemathwalker/cargo-chef as cacher
-WORKDIR /app
-COPY ./recipe.json recipe.json
-RUN cargo chef cook --release --recipe-path recipe.json
+FROM ghcr.io/daggy1234/rust-crosscompiler-arm:latest as build
+ENV PKG_CONFIG_ALLOW_CROSS=1
 
-FROM rust as builder
-WORKDIR /app
+WORKDIR /usr/src/image-uploader
 COPY . .
-COPY --from=cacher /app/target target
-COPY --from=cacher $CARGO_HOME $CARGO_HOME
-RUN cargo build --release
+
+RUN cargo install --path .
 
 FROM gcr.io/distroless/cc-debian10
 WORKDIR /usr/local/bin
-COPY --from=builder /app/target/release/image-uploader .
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/templates ./templates
+COPY --from=build /usr/local/cargo/bin/image-uploader .
+COPY --from=build /usr/src/image-uploader/public ./public
+COPY --from=build /usr/src/image-uploader/templates ./templates
 
-ENTRYPOINT ["image-uploader"]
+CMD ["image-uploader"]
