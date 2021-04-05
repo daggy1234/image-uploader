@@ -1,15 +1,19 @@
-FROM rust:1.48.0 as build
-ENV PKG_CONFIG_ALLOW_CROSS=1
+FROM lukemathwalker/cargo-chef as cacher
+WORKDIR /app
+COPY ./recipe.json recipe.json
+RUN cargo chef cook --release --recipe-path recipe.json
 
-WORKDIR /usr/src/dag_cdn
+FROM rust as builder
+WORKDIR /app
 COPY . .
-
-RUN cargo install --path .
+COPY --from=cacher /app/target target
+COPY --from=cacher $CARGO_HOME $CARGO_HOME
+RUN cargo build --release
 
 FROM gcr.io/distroless/cc-debian10
 WORKDIR /usr/local/bin
-COPY --from=build /usr/local/cargo/bin/dag_cdn .
-COPY --from=build /usr/src/dag_cdn/public ./public
-COPY --from=build /usr/src/dag_cdn/templates ./templates
+COPY --from=builder /app/target/release/image-uploader .
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/templates ./templates
 
-CMD ["dag_cdn"]
+ENTRYPOINT ["image-uploader"]

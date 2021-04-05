@@ -3,12 +3,13 @@ use actix_identity::Identity;
 use actix_identity::{CookieIdentityPolicy, IdentityService};
 use actix_multipart::Multipart;
 use actix_ratelimit::{MemoryStore, MemoryStoreActor, RateLimiter};
-use actix_web::dev::{Body, HttpResponseBuilder, ServiceResponse};
+use actix_web::dev::{Body, ServiceResponse};
 use actix_web::http::StatusCode;
 use actix_web::middleware::errhandlers::{ErrorHandlerResponse, ErrorHandlers};
+use actix_web::middleware::Logger;
 use actix_web::{delete, error, get, middleware, post, web, App, Error, HttpServer, Result};
 use actix_web::{HttpRequest, HttpResponse};
-use actix_web_httpauth::{extractors::basic::BasicAuth, middleware::HttpAuthentication};
+use actix_web_httpauth::middleware::HttpAuthentication;
 use async_std::prelude::*;
 use futures::{StreamExt, TryStreamExt};
 use std::{collections::HashMap, time::Duration};
@@ -243,9 +244,15 @@ fn method_not_allowed<B>(res: ServiceResponse<B>) -> Result<ErrorHandlerResponse
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    std::env::set_var("RUST_LOG", "actix_web=debug");
-    env_logger::init();
+    std::env::set_var("RUST_LOG", "actix_web=debug,actix_server=info");
+    std::env::set_var("RUST_BACKTRACE", "1");
+    println!("Loading Env Vars");
     dotenv::dotenv().ok();
+    println!("Starting Server......");
+
+    let start = std::env::var("URL").expect("WE NEED A URL ");
+    let port = std::env::var("PORT").expect("WE NEED A port ");
+    env_logger::init();
     HttpServer::new(|| {
         let tera = Tera::new("templates/**/*").unwrap();
         let store = MemoryStore::new();
@@ -255,9 +262,9 @@ async fn main() -> std::io::Result<()> {
         };
         let protect_form = Cors::default().allowed_origin(&BASE_URL);
         let private_key = rand::thread_rng().gen::<[u8; 32]>();
+        println!("Data Ready");
         App::new()
             .data(tera)
-            .wrap(middleware::Logger::default())
             .wrap(middleware::Compress::default())
             .service(Files::new("/images", "static/images"))
             .service(Files::new("/static", "public"))
@@ -290,8 +297,11 @@ async fn main() -> std::io::Result<()> {
             .service(login)
             .service(logout)
             .service(web::scope("").wrap(error_handlers()))
+            .wrap(Logger::default())
     })
-    .bind("0.0.0.0:6969")?
+    .workers(1)
+    .bind(format!("{}:{}", start, port))
+    .unwrap()
     .run()
     .await
 }
