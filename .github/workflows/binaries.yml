@@ -13,6 +13,8 @@ jobs:
         matrix:
           arch:
             - { target: arm-unknown-linux-gnueabihf , use-cross: true }
+            - { target: i686-unknown-linux-gnu , use-cross: true }
+            - { target: x86_64-unknown-linux-gnu }
       steps:
         - uses: actions/checkout@v2
         - name: Extract crate information
@@ -38,7 +40,7 @@ jobs:
           uses: actions/upload-artifact@master
           with:
             name: artifact
-            path: ./${{ env.PROJECT_NAME }}-${{ matrix.arch.target }}
+            path: ./${{ env.PROJECT_NAME }}-${{ matrix.arch.target }}/
         
   release:
     needs: CD
@@ -55,7 +57,7 @@ jobs:
           body: |
             view the CHANGELOG.md for full changes
           files: |
-            dist/*
+            dist/**/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
