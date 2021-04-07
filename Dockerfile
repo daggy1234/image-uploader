@@ -1,4 +1,4 @@
-FROM ghcr.io/daggy1234/rust-crosscompiler-arm:latest as build
+FROM rust as build
 ENV PKG_CONFIG_ALLOW_CROSS=1
 
 WORKDIR /usr/src/image-uploader
