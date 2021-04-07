@@ -1,4 +1,4 @@
-# DagCdn
+# Image-Uploader
 A sharex compatible image uploader built for speed.
 
 ## Features
@@ -7,6 +7,8 @@ A sharex compatible image uploader built for speed.
 - Normal HTTP uploader
 - Uploader that supports forms
 - Full ShareX support (example file)
+- Automatic file compression
+- Speed and Efficiency (Rust btw)
 
 ## Env File
 
