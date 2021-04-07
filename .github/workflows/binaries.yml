@@ -9,9 +9,7 @@ on:
 jobs:
   CD:
       runs-on: ubuntu-latest
-      needs: CI
       strategy:
-        fail-fast: false
         matrix:
           arch:
             - { target: arm-unknown-linux-gnueabihf , use-cross: true }
