@@ -40,7 +40,6 @@ jobs:
         - name: Upload package artifact
           uses: actions/upload-artifact@master
           with:
-            name: artifact
             path: ${{ env.PROJECT_NAME }}-${{ matrix.arch.target }}.tar.gz
         
   release:
