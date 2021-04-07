@@ -29,15 +29,33 @@ jobs:
         - name: Extract crate information
           shell: bash
           run: |
-            mkdir compiled
-            cp -r templates compiled/templates
-            cp -r static compiled/static
-            cp  target/${{ matrix.arch.target }}/release/${{ env.PROJECT_NAME }} compiled/${{ env.PROJECT_NAME }}
+            mkdir ${{ env.PROJECT_NAME }}-${{ matrix.arch.target }}
+            cp -r templates ${{ env.PROJECT_NAME }}-${{ matrix.arch.target }}/templates
+            cp -r static ${{ env.PROJECT_NAME }}-${{ matrix.arch.target }}/static
+            cp  target/${{ matrix.arch.target }}/release/${{ env.PROJECT_NAME }} ${{ env.PROJECT_NAME }}-${{ matrix.arch.target }}/${{ env.PROJECT_NAME }}
         
         - name: Upload package artifact
           uses: actions/upload-artifact@master
           with:
-            name: '${{ env.PROJECT_NAME }}.v${{ env.PROJECT_VERSION }}.${{ matrix.arch.target }}'
-            path: ./compiled
+            name: artifact
+            path: ./${{ env.PROJECT_NAME }}-${{ matrix.arch.target }}
         
+  release:
+    needs: CD
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v2
+        with:
+          name: artifact
+          path: dist
+
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          body: |
+            view the CHANGELOG.md for full changes
+          files: |
+            dist/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       

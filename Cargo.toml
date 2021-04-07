@@ -1,6 +1,6 @@
 [package]
 name = "image-uploader"
-version = "0.2.4"
+version = "0.2.5"
 authors = ["GitHub <noreply@github.com>"]
 edition = "2018"
 
