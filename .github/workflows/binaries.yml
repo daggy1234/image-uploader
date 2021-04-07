@@ -26,19 +26,18 @@ jobs:
             use-cross: ${{ matrix.arch.use-cross }}
             command: build
             args: --release --target=${{ matrix.arch.target }}
-
+        - name: Extract crate information
+          shell: bash
+          run: |
+            mkdir compiled
+            cp -r templates compiled/templates
+            cp -r static compiled/static
+            cp  target/${{ matrix.arch.target }}/release/${{ env.PROJECT_NAME }} compiled/${{ env.PROJECT_NAME }}
+        
         - name: Upload package artifact
           uses: actions/upload-artifact@master
           with:
             name: '${{ env.PROJECT_NAME }}.v${{ env.PROJECT_VERSION }}.${{ matrix.arch.target }}'
-            path: 'target/${{ matrix.arch.target }}/release/${{ env.PROJECT_NAME }}'
+            path: ./compiled
         
-        - name: Upload package artifact
-          uses: actions/upload-artifact@master
-          with:
-            path: ./templates
-        
-        - name: Upload package artifact
-          uses: actions/upload-artifact@master
-          with:
-            path: ./static
+      
