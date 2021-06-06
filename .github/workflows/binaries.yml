@@ -8,42 +8,131 @@ on:
 
 jobs:
   CD:
-      runs-on: ubuntu-latest
-      strategy:
-        matrix:
-          arch:
-            - { target: arm-unknown-linux-gnueabihf , use-cross: true }
-            - { target: i686-unknown-linux-gnu , use-cross: true }
-            - { target: x86_64-unknown-linux-gnu }
-      steps:
-        - uses: actions/checkout@v2
-        - name: Extract crate information
-          shell: bash
-          run: |
-            echo "PROJECT_NAME=$(sed -n 's/^name = "\(.*\)"/\1/p' Cargo.toml)" >> "$GITHUB_ENV"
-            echo "PROJECT_VERSION=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -n1)" >> "$GITHUB_ENV"
-        - name: Build
-          uses: actions-rs/cargo@v1
-          with:
-            use-cross: ${{ matrix.arch.use-cross }}
-            command: build
-            args: --release --target=${{ matrix.arch.target }}
-        - name: Extract crate information
-          shell: bash
-          run: |
-            mkdir ${{ env.PROJECT_NAME }}-${{ matrix.arch.target }}
-            cp -r templates ${{ env.PROJECT_NAME }}-${{ matrix.arch.target }}/templates
-            cp -r static ${{ env.PROJECT_NAME }}-${{ matrix.arch.target }}/static
-            cp  target/${{ matrix.arch.target }}/release/${{ env.PROJECT_NAME }} ${{ env.PROJECT_NAME }}-${{ matrix.arch.target }}/${{ env.PROJECT_NAME }}
-            tar -czvf ${{ env.PROJECT_NAME }}-${{ matrix.arch.target }}.tar.gz ${{ env.PROJECT_NAME }}-${{ matrix.arch.target }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        arch:
+          - { target: aarch64-unknown-linux-gnu , use-cross: true}
+          - { target: i686-unknown-linux-gnu , use-cross: true }
+          - { target: x86_64-pc-windows-gnu , use-cross: true}
+          - { target: aarch64-linux-android, use-cross: true}
+          - { target: x86_64-unknown-linux-gnu }
+          - { target: x86_64-unknown-linux-musl, use-cross: true}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Extract crate information
+        shell: bash
+        run: |
+          echo "PROJECT_NAME=$(sed -n 's/^name = "\(.*\)"/\1/p' Cargo.toml | head -n1)" >> "$GITHUB_ENV"
+          echo "PROJECT_VERSION=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -n1)" >> "$GITHUB_ENV"
+      - name: Build
+        uses: actions-rs/cargo@v1
+        with:
+          use-cross: ${{ matrix.arch.use-cross }}
+          command: build
+          args: --release --features auto_updates --target=${{ matrix.arch.target }}
 
-        - name: Upload package artifact
-          uses: actions/upload-artifact@master
-          with:
-            path: ${{ env.PROJECT_NAME }}-${{ matrix.arch.target }}.tar.gz
-        
+      - name: mkdir
+        shell: bash
+        run: |
+          mkdir  ${{ env.PROJECT_NAME }}-${{ env.PROJECT_VERSION }}-${{ matrix.arch.target }}
+
+      - name: Copy
+        shell: bash
+        if: ${{ matrix.arch.target != 'x86_64-pc-windows-gnu' }}
+        run: |
+          cp  target/${{ matrix.arch.target }}/release/${{ env.PROJECT_NAME }} ${{ env.PROJECT_NAME }}-${{ env.PROJECT_VERSION }}-${{ matrix.arch.target }}/${{ matrix.arch.name }}
+          tar -zcvf ${{ env.PROJECT_NAME }}-${{ env.PROJECT_VERSION }}-${{ matrix.arch.target }}.tar.gz ${{ env.PROJECT_NAME }}-${{ env.PROJECT_VERSION }}-${{ matrix.arch.target }}/${{ matrix.arch.name }}
+
+      - name: Copy
+        shell: bash 
+        if: ${{ matrix.arch.target == 'x86_64-pc-windows-gnu' }}
+        run: |
+          sudo add-apt-repository universe
+          sudo apt install p7zip-full p7zip-rar
+          cp target/${{ matrix.arch.target }}/release/${{ env.PROJECT_NAME }}.exe ${{ env.PROJECT_NAME }}-${{ env.PROJECT_VERSION }}-${{ matrix.arch.target }}/${{ matrix.arch.name }}.exe
+          cd ${{ env.PROJECT_NAME }}-${{ env.PROJECT_VERSION }}-${{ matrix.arch.target }}
+          7z a ${{ env.PROJECT_NAME }}-${{ env.PROJECT_VERSION }}-${{ matrix.arch.target }}.zip *
+
+      - name: Upload package artifact
+        uses: actions/upload-artifact@master
+        if: ${{ matrix.arch.target == 'x86_64-pc-windows-gnu' }}
+        with:
+          path: ${{ env.PROJECT_NAME }}-${{ env.PROJECT_VERSION }}-${{ matrix.arch.target }}/${{ env.PROJECT_NAME }}-${{ env.PROJECT_VERSION }}-${{ matrix.arch.target }}.zip
+
+      - name: Upload package artifact
+        uses: actions/upload-artifact@master
+        if: ${{ matrix.arch.target != 'x86_64-pc-windows-gnu' }}
+        with:
+          path: ${{ env.PROJECT_NAME }}-${{ env.PROJECT_VERSION }}-${{ matrix.arch.target }}.tar.gz
+
+
+  windows:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: ['x86_64-pc-windows-msvc']
+    steps:
+      - uses: actions/checkout@v2
+      - name: Extract crate information
+        shell: bash
+        run: |
+            echo "PROJECT_NAME=$(sed -n 's/^name = "\(.*\)"/\1/p' Cargo.toml | head -n1)" >> "$GITHUB_ENV"
+            echo "PROJECT_VERSION=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -n1)" >> "$GITHUB_ENV"
+
+      - name: Build
+        uses: actions-rs/cargo@v1
+        with:
+            command: build
+            args: --release --features auto_updates --target ${{ matrix.target }}
+
+      - name: Copy
+        shell: bash
+        run: |
+          mkdir ${{ env.PROJECT_NAME }}-${{ env.PROJECT_VERSION }}-${{ matrix.target }}
+          cp target/${{ matrix.target }}/release/${{ env.PROJECT_NAME }}.exe ${{ env.PROJECT_NAME }}-${{ env.PROJECT_VERSION }}-${{ matrix.target }}/${{ env.PROJECT_NAME }}.exe
+          cd ${{ env.PROJECT_NAME }}-${{ env.PROJECT_VERSION }}-${{ matrix.target }}
+          "/c/Program Files/7-Zip/7z.exe" a ${{ env.PROJECT_NAME }}-${{ env.PROJECT_VERSION }}-${{ matrix.target }}.zip *
+
+      - name: Upload package artifact
+        uses: actions/upload-artifact@master
+        with:
+          path: ${{ env.PROJECT_NAME }}-${{ env.PROJECT_VERSION }}-${{ matrix.target }}/${{ env.PROJECT_NAME }}-${{ env.PROJECT_VERSION }}-${{ matrix.target }}.zip
+
+
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Extract crate information
+        shell: bash
+        run: |
+            echo "PROJECT_NAME=$(sed -n 's/^name = "\(.*\)"/\1/p' Cargo.toml | head -n1)" >> "$GITHUB_ENV"
+            echo "PROJECT_VERSION=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -n1)" >> "$GITHUB_ENV"
+
+      - name: Build
+        uses: actions-rs/cargo@v1
+        with:
+            command: build
+            args: --release --features auto_updates
+
+      - name: Copy
+        shell: bash
+        run: |
+          mkdir ${{ env.PROJECT_NAME }}-${{ env.PROJECT_VERSION }}-x86_64-apple-darwin
+          cp  target/release/${{ env.PROJECT_NAME }} ${{ env.PROJECT_NAME }}-${{ env.PROJECT_VERSION }}-x86_64-apple-darwin/${{ env.PROJECT_NAME }}
+          tar -czvf ${{ env.PROJECT_NAME }}-${{ env.PROJECT_VERSION }}-x86_64-apple-darwin.tar.gz ${{ env.PROJECT_NAME }}-${{ env.PROJECT_VERSION }}-x86_64-apple-darwin
+
+      - name: Upload package artifact
+        uses: actions/upload-artifact@master
+        with:
+          path: ${{ env.PROJECT_NAME }}-${{ env.PROJECT_VERSION }}-x86_64-apple-darwin.tar.gz
+
+
   release:
-    needs: CD
+    needs: [CD, macos, windows]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v2
@@ -60,4 +149,4 @@ jobs:
             dist/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
+
