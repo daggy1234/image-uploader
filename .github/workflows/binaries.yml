@@ -14,6 +14,7 @@ jobs:
         arch:
           - { target: aarch64-unknown-linux-gnu, use-cross: true }
           - { target: i686-unknown-linux-gnu, use-cross: true }
+          - { target: arm-unknown-linux-gnueabihf, use-cross: true }
           - { target: x86_64-pc-windows-gnu, use-cross: true }
           - { target: aarch64-linux-android, use-cross: true }
           - { target: x86_64-unknown-linux-gnu }
