@@ -1,10 +1,9 @@
-
 name: Rust
 
 on:
   push:
     tags:
-      - '*'
+      - "*"
 
 jobs:
   CD:
@@ -13,12 +12,12 @@ jobs:
       fail-fast: false
       matrix:
         arch:
-          - { target: aarch64-unknown-linux-gnu , use-cross: true}
-          - { target: i686-unknown-linux-gnu , use-cross: true }
-          - { target: x86_64-pc-windows-gnu , use-cross: true}
-          - { target: aarch64-linux-android, use-cross: true}
+          - { target: aarch64-unknown-linux-gnu, use-cross: true }
+          - { target: i686-unknown-linux-gnu, use-cross: true }
+          - { target: x86_64-pc-windows-gnu, use-cross: true }
+          - { target: aarch64-linux-android, use-cross: true }
           - { target: x86_64-unknown-linux-gnu }
-          - { target: x86_64-unknown-linux-musl, use-cross: true}
+          - { target: x86_64-unknown-linux-musl, use-cross: true }
     steps:
       - uses: actions/checkout@v2
       - name: Extract crate information
@@ -31,22 +30,24 @@ jobs:
         with:
           use-cross: ${{ matrix.arch.use-cross }}
           command: build
-          args: --release --features auto_updates --target=${{ matrix.arch.target }}
+          args: --release --target=${{ matrix.arch.target }}
 
       - name: mkdir
         shell: bash
         run: |
           mkdir  ${{ env.PROJECT_NAME }}-${{ env.PROJECT_VERSION }}-${{ matrix.arch.target }}
+          cp -r templates ${{ env.PROJECT_NAME }}-${{ env.PROJECT_VERSION }}-${{ matrix.arch.target }}/templates
+          cp -r static ${{ env.PROJECT_NAME }}-${{ env.PROJECT_VERSION }}-${{ matrix.arch.target }}/static
 
       - name: Copy
         shell: bash
         if: ${{ matrix.arch.target != 'x86_64-pc-windows-gnu' }}
         run: |
           cp  target/${{ matrix.arch.target }}/release/${{ env.PROJECT_NAME }} ${{ env.PROJECT_NAME }}-${{ env.PROJECT_VERSION }}-${{ matrix.arch.target }}/${{ matrix.arch.name }}
-          tar -zcvf ${{ env.PROJECT_NAME }}-${{ env.PROJECT_VERSION }}-${{ matrix.arch.target }}.tar.gz ${{ env.PROJECT_NAME }}-${{ env.PROJECT_VERSION }}-${{ matrix.arch.target }}/${{ matrix.arch.name }}
+          tar -czvf ${{ env.PROJECT_NAME }}-${{ env.PROJECT_VERSION }}-${{ matrix.arch.target }}.tar.gz ${{ env.PROJECT_NAME }}-${{ env.PROJECT_VERSION }}-${{ matrix.arch.target }}
 
       - name: Copy
-        shell: bash 
+        shell: bash
         if: ${{ matrix.arch.target == 'x86_64-pc-windows-gnu' }}
         run: |
           sudo add-apt-repository universe
@@ -67,32 +68,33 @@ jobs:
         with:
           path: ${{ env.PROJECT_NAME }}-${{ env.PROJECT_VERSION }}-${{ matrix.arch.target }}.tar.gz
 
-
   windows:
     runs-on: windows-latest
     strategy:
       fail-fast: false
       matrix:
-        target: ['x86_64-pc-windows-msvc']
+        target: ["x86_64-pc-windows-msvc"]
     steps:
       - uses: actions/checkout@v2
       - name: Extract crate information
         shell: bash
         run: |
-            echo "PROJECT_NAME=$(sed -n 's/^name = "\(.*\)"/\1/p' Cargo.toml | head -n1)" >> "$GITHUB_ENV"
-            echo "PROJECT_VERSION=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -n1)" >> "$GITHUB_ENV"
+          echo "PROJECT_NAME=$(sed -n 's/^name = "\(.*\)"/\1/p' Cargo.toml | head -n1)" >> "$GITHUB_ENV"
+          echo "PROJECT_VERSION=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -n1)" >> "$GITHUB_ENV"
 
       - name: Build
         uses: actions-rs/cargo@v1
         with:
-            command: build
-            args: --release --features auto_updates --target ${{ matrix.target }}
+          command: build
+          args: --release --target ${{ matrix.target }}
 
       - name: Copy
         shell: bash
         run: |
           mkdir ${{ env.PROJECT_NAME }}-${{ env.PROJECT_VERSION }}-${{ matrix.target }}
           cp target/${{ matrix.target }}/release/${{ env.PROJECT_NAME }}.exe ${{ env.PROJECT_NAME }}-${{ env.PROJECT_VERSION }}-${{ matrix.target }}/${{ env.PROJECT_NAME }}.exe
+          cp -r templates ${{ env.PROJECT_NAME }}-${{ env.PROJECT_VERSION }}-${{ matrix.arch.target }}/templates
+          cp -r static ${{ env.PROJECT_NAME }}-${{ env.PROJECT_VERSION }}-${{ matrix.arch.target }}/static
           cd ${{ env.PROJECT_NAME }}-${{ env.PROJECT_VERSION }}-${{ matrix.target }}
           "/c/Program Files/7-Zip/7z.exe" a ${{ env.PROJECT_NAME }}-${{ env.PROJECT_VERSION }}-${{ matrix.target }}.zip *
 
@@ -101,7 +103,6 @@ jobs:
         with:
           path: ${{ env.PROJECT_NAME }}-${{ env.PROJECT_VERSION }}-${{ matrix.target }}/${{ env.PROJECT_NAME }}-${{ env.PROJECT_VERSION }}-${{ matrix.target }}.zip
 
-
   macos:
     runs-on: macos-latest
     steps:
@@ -109,19 +110,20 @@ jobs:
       - name: Extract crate information
         shell: bash
         run: |
-            echo "PROJECT_NAME=$(sed -n 's/^name = "\(.*\)"/\1/p' Cargo.toml | head -n1)" >> "$GITHUB_ENV"
-            echo "PROJECT_VERSION=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -n1)" >> "$GITHUB_ENV"
+          echo "PROJECT_NAME=$(sed -n 's/^name = "\(.*\)"/\1/p' Cargo.toml | head -n1)" >> "$GITHUB_ENV"
+          echo "PROJECT_VERSION=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -n1)" >> "$GITHUB_ENV"
 
       - name: Build
         uses: actions-rs/cargo@v1
         with:
-            command: build
-            args: --release --features auto_updates
-
+          command: build
+          args: --release
       - name: Copy
         shell: bash
         run: |
           mkdir ${{ env.PROJECT_NAME }}-${{ env.PROJECT_VERSION }}-x86_64-apple-darwin
+          cp -r templates ${{ env.PROJECT_NAME }}-${{ env.PROJECT_VERSION }}-x86_64-apple-darwin/templates
+          cp -r static ${{ env.PROJECT_NAME }}-${{ env.PROJECT_VERSION }}-x86_64-apple-darwin/static
           cp  target/release/${{ env.PROJECT_NAME }} ${{ env.PROJECT_NAME }}-${{ env.PROJECT_VERSION }}-x86_64-apple-darwin/${{ env.PROJECT_NAME }}
           tar -czvf ${{ env.PROJECT_NAME }}-${{ env.PROJECT_VERSION }}-x86_64-apple-darwin.tar.gz ${{ env.PROJECT_NAME }}-${{ env.PROJECT_VERSION }}-x86_64-apple-darwin
 
@@ -129,7 +131,6 @@ jobs:
         uses: actions/upload-artifact@master
         with:
           path: ${{ env.PROJECT_NAME }}-${{ env.PROJECT_VERSION }}-x86_64-apple-darwin.tar.gz
-
 
   release:
     needs: [CD, macos, windows]
@@ -149,4 +150,3 @@ jobs:
             dist/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
