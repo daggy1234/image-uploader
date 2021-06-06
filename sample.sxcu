@@ -1,0 +1,13 @@
+{
+    "Name": "Image-Uploader",
+    "RequestMethod": "POST",    
+    "DestinationType": "ImageUploader",
+    "RequestURL": "<url>/upload",
+    "Headers": {
+        "Authorization": "Bearer <token>"
+    },
+    "Body": "MultipartFormData",
+    "FileFormName": "file",
+    "DeletionURL": "$json:images[0].deletion_url$",
+    "URL": "$json:images[0].url$"
+}
