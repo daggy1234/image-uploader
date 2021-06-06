@@ -94,8 +94,8 @@ jobs:
         run: |
           mkdir ${{ env.PROJECT_NAME }}-${{ env.PROJECT_VERSION }}-${{ matrix.target }}
           cp target/${{ matrix.target }}/release/${{ env.PROJECT_NAME }}.exe ${{ env.PROJECT_NAME }}-${{ env.PROJECT_VERSION }}-${{ matrix.target }}/${{ env.PROJECT_NAME }}.exe
-          cp -r templates ${{ env.PROJECT_NAME }}-${{ env.PROJECT_VERSION }}-${{ matrix.arch.target }}/templates
-          cp -r static ${{ env.PROJECT_NAME }}-${{ env.PROJECT_VERSION }}-${{ matrix.arch.target }}/static
+          cp -r templates ${{ env.PROJECT_NAME }}-${{ env.PROJECT_VERSION }}-${{ matrix.target }}/templates
+          cp -r static ${{ env.PROJECT_NAME }}-${{ env.PROJECT_VERSION }}-${{ matrix.target }}/static
           cd ${{ env.PROJECT_NAME }}-${{ env.PROJECT_VERSION }}-${{ matrix.target }}
           "/c/Program Files/7-Zip/7z.exe" a ${{ env.PROJECT_NAME }}-${{ env.PROJECT_VERSION }}-${{ matrix.target }}.zip *
 
